@@ -1,8 +1,10 @@
-// inside db/index.js
+  // inside db/index.js
 const { Client } = require('pg'); // imports the pg module
 
 // supply the db name and location of the database
 const client = new Client('postgres://localhost:5432/juicebox');
+
+
 
 async function getAllUsers() {
   const { rows } = await client.query(
@@ -12,7 +14,34 @@ async function getAllUsers() {
 
   return rows;
 }
+async function getUserByUsername(username) {
+  try {
+    const { rows: [user] } = await client.query(`
+      SELECT *
+      FROM users
+      WHERE username=$1;
+    `, [username]);
 
+    return user;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getAllTags() {
+
+  try{
+  const {rows : tags} = await client.query(`
+  SELECT *
+  FROM tags;
+  `);
+
+  return tags
+  }
+  catch (error){
+    console.log(error)
+  }
+}
 async function createUser({ 
   username, 
   password,
@@ -32,7 +61,6 @@ async function createUser({
     throw error;
   }
 }
-
 async function createPost({
   authorId,
   title,
@@ -53,7 +81,6 @@ async function createPost({
     throw error;
   }
 }
-
 async function createPostTag(postId, tagId) {
   try {
     await client.query(`
@@ -65,7 +92,6 @@ async function createPostTag(postId, tagId) {
     throw error;
   }
 }
-
 async function addTagsToPost(postId, tagList) {
   try {
     
@@ -80,7 +106,6 @@ async function addTagsToPost(postId, tagList) {
     throw error;
   }
 }
-
 async function getPostById(postId) {
   try {
     const { rows: [ post ]  } = await client.query(`
@@ -112,7 +137,6 @@ async function getPostById(postId) {
     throw error;
   }
 }
-
 async function createTags(tagList) {
   if (tagList.length === 0) { 
     return;   }
@@ -149,7 +173,6 @@ async function createTags(tagList) {
     throw error;
   }
 }
-
 async function updatePost(postId, fields = {}) {
   // read off the tags & remove that field 
   const { tags } = fields; // might be undefined
@@ -198,7 +221,6 @@ async function updatePost(postId, fields = {}) {
     throw error;
   }
 }
-
 async function getAllPosts() {
   try {
     const { rows: postIds } = await client.query(`
@@ -215,7 +237,6 @@ async function getAllPosts() {
     throw error;
   }
 }
-
 async function getPostsByUser(userId) {
   try {
     const { rows: postIds } = await client.query(`
@@ -233,7 +254,6 @@ async function getPostsByUser(userId) {
     throw error;
   }
 }
-
 async function getPostById(postId) {
   try {
     const { rows: [ post ]  } = await client.query(`
@@ -241,6 +261,13 @@ async function getPostById(postId) {
       FROM posts
       WHERE id=$1;
     `, [postId]);
+
+    if (!post) {
+      throw {
+        name: "PostNotFoundError",
+        message: "Could not find a post with that postId"
+      };
+    }
 
     const { rows: tags } = await client.query(`
       SELECT tags.*
@@ -265,7 +292,6 @@ async function getPostById(postId) {
     throw error;
   }
 }
-
 async function getPostsByTagName(tagName) {
   try {
     const { rows: postIds } = await client.query(`
@@ -354,5 +380,8 @@ module.exports = {
   getUserById,
   addTagsToPost,
   createTags,
-  getPostsByTagName
+  getPostsByTagName,
+  getAllTags,
+  getUserByUsername,
+  getPostById
 }
